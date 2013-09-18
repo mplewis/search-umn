@@ -5,6 +5,25 @@ from bs4 import BeautifulSoup
 from urllib2 import urlopen
 from urllib import quote_plus
 from pprint import pprint
+from HTMLParser import HTMLParser
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.fed = []
+    def handle_data(self, d):
+        self.fed.append(d)
+    def get_data(self):
+        return ''.join(self.fed)
+
+def strip_tags(html):
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()
+
+def replace_br_with_newline(html):
+    replaced = html.replace('<br>', '\n').replace('</br>', '\n')
+    return replaced
 
 def parse_multiple_results(soup):
     rows = soup.find(id='pagecontent').find('table').find_all('tr')
@@ -26,6 +45,16 @@ def parse_multiple_results(soup):
         all_rows.append(row_data)
     all_rows.pop(0)
     return all_rows
+
+def parse_single_result(soup):
+    data = soup.find(id='pagecontent').find('table').find_all('tr')
+    parsed = {}
+    for kv_pair in data:
+        key = kv_pair.find('th').text.strip().lower().replace(' ', '_')
+        value_html = str(kv_pair.find('td'))
+        value = strip_tags(replace_br_with_newline(value_html)).strip()
+        parsed[key] = value
+    return parsed
 
 def is_multiple_results(soup):
     try:
@@ -78,7 +107,7 @@ if is_multiple_results(soup):
     pprint(results)
     print '%s results found.' % len(results)
 elif is_single_result(soup):
-    print 'Single result'
+    pprint(parse_single_result(soup))
 elif is_no_results(soup):
     print 'No results'
 elif is_too_many_results(soup):
