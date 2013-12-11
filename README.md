@@ -16,4 +16,9 @@ To search for a person using their full name, enclose it in quotation marks like
 
 	./search.py "Nicholas McKinney"
 	
+#Dependencies
+[Beautiful Soup v4](http://www.crummy.com/software/BeautifulSoup/bs4/) is required for this script to run. You can install it using the following command:
+
+	pip install beautifulsoup4
+	
 *Note: I'm open to any commits that make this project faster, more efficient, easier to use, or more functional.*
