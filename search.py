@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import argparse
 import sys
 from bs4 import BeautifulSoup
 from urllib2 import urlopen
@@ -36,7 +37,7 @@ def parse_multiple_results(soup):
             cell_text = cell_data.text
             cell_field = fields[cell_num]
             if cell_text.strip() != '':
-                row_data[cell_field] = cell_text
+                row_data[cell_field] = cell_text.replace(u'\xa0', u' ')
             if cell_num == url_field_num:
                 url = cell_data.find('a')['href']
                 row_data[url_field] = url
@@ -91,8 +92,7 @@ def is_too_many_results(soup):
     except AttributeError: # catch None.find()
         return False
 
-search_url = 'http://www.umn.edu/lookup?SET_INSTITUTION=UMNTC&type=name&CN=%s&campus=t&role=any'
-search_name = quote_plus(sys.argv[1])
+search_url = 'http://www.umn.edu/lookup?SET_INSTITUTION=UMNTC&type=%s&CN=%s&campus=%s&role=%s'
 
 fields = ['name', 'email', 'work_phone', 'phone', 'dept_or_college']
 x500_field = 'x500'
@@ -100,17 +100,40 @@ x500_split = '&UID='
 url_field = 'url'
 url_field_num = 0
 
-html = urlopen(search_url % search_name).read()
-soup = BeautifulSoup(html)
-if is_multiple_results(soup):
-    results = parse_multiple_results(soup)
-    pprint(results)
-    print '%s results found.' % len(results)
-elif is_single_result(soup):
-    pprint(parse_single_result(soup))
-elif is_no_results(soup):
-    print 'No results'
-elif is_too_many_results(soup):
-    print 'Too many results'
-else:
-    print 'Unknown state'
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Search the UMN People Directory using a Python API.')
+    parser.add_argument('-t', '--search_type', default='name', 
+                        help='Search by name or id (Default: name)', 
+                        choices=['name','id'])
+    parser.add_argument('-c', '--campus', default='t', 
+                        help='Campus to search (Default: Twin Cities campus)', 
+                        choices=['a','c','d','m','r','t','o'])
+    parser.add_argument('-r', '--role', default='any', 
+                        help='The person\'s role (Default: any)', 
+                        choices=['any','sta','stu','alu','ret'])
+    parser.add_argument('name', 
+                        help='Name or Internet ID of person to be searched')
+    args = parser.parse_args()
+
+    if (args.search_type == 'id'):
+        search_type = 'Internet+ID'
+    else:
+        search_type = args.search_type
+    campus = args.campus
+    role = args.role
+    search_name = quote_plus(args.name)
+
+    html = urlopen(search_url % (search_type, search_name, campus, role)).read()
+    soup = BeautifulSoup(html)
+    if is_multiple_results(soup):
+        results = parse_multiple_results(soup)
+        pprint(results)
+        print '%s results found.' % len(results)
+    elif is_single_result(soup):
+        pprint(parse_single_result(soup))
+    elif is_no_results(soup):
+        print 'No results'
+    elif is_too_many_results(soup):
+        print 'Too many results'
+    else:
+        print 'Unknown state'
