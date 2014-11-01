@@ -1,8 +1,6 @@
 search-umn
 ==========
 
-[![tip for next commit](http://tip4commit.com/projects/189.svg)](http://tip4commit.com/projects/189)
-
 #Purpose
 To search the [UMN People Directory](http://search.umn.edu/) using a Python API.
 
